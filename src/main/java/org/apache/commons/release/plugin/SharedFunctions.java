@@ -16,20 +16,19 @@
  */
 package org.apache.commons.release.plugin;
 
-import java.io.File;
-import java.io.IOException;
-
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.scm.ScmException;
 import org.apache.maven.scm.ScmFileSet;
-import org.apache.maven.scm.manager.BasicScmManager;
 import org.apache.maven.scm.manager.ScmManager;
 import org.apache.maven.scm.provider.ScmProvider;
 import org.apache.maven.scm.provider.svn.repository.SvnScmProviderRepository;
 import org.apache.maven.scm.provider.svn.svnexe.SvnExeScmProvider;
 import org.apache.maven.scm.repository.ScmRepository;
 import org.codehaus.plexus.util.FileUtils;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Shared static functions for all of our Mojos.
@@ -119,7 +118,7 @@ public final class SharedFunctions {
      * @param scmManager the maven {@link ScmManager} for the project.
      * @param scmUrl the url for the repository in the form <code>scm:svn:https://TheRemainderOfTheSvnRepoUrl</code>.
      * @return the properly configured {@link ScmRepository}.
-     * @throws ScmException
+     * @throws ScmException if an error in the checkout occurrs.
      */
     public static ScmRepository buildScmRepository(ScmManager scmManager, String scmUrl) throws ScmException {
         scmManager.setScmProvider("svn", new SvnExeScmProvider());
@@ -129,6 +128,7 @@ public final class SharedFunctions {
     /**
      * Convenience method for checking out the svn repository and log the fact that we do so.
      *
+     * @param log the maven {@link Log} for the sake of logging that we're doing an SVN checkout.
      * @param checkoutDirectory the {@link File} to which we checkout the
      * @param scmUrl the url from which we are checking out the SVN repo for the sake of logging.
      * @param scmProvider the {@link ScmProvider} to use for the checkout.
@@ -137,7 +137,7 @@ public final class SharedFunctions {
      * @throws ScmException if an error in the checkout occurrs.
      */
     public static ScmFileSet checkoutFiles(Log log, File checkoutDirectory, String scmUrl,
-                                     ScmProvider scmProvider, ScmRepository repository) throws ScmException{
+                                     ScmProvider scmProvider, ScmRepository repository) throws ScmException {
         ScmFileSet scmFileSet = new ScmFileSet(checkoutDirectory);
         log.info("Checking out dist from: " + scmUrl);
         scmProvider.checkOut(repository, scmFileSet);

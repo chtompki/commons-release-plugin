@@ -32,8 +32,6 @@ import org.apache.maven.scm.command.checkin.CheckInScmResult;
 import org.apache.maven.scm.manager.BasicScmManager;
 import org.apache.maven.scm.manager.ScmManager;
 import org.apache.maven.scm.provider.ScmProvider;
-import org.apache.maven.scm.provider.svn.repository.SvnScmProviderRepository;
-import org.apache.maven.scm.provider.svn.svnexe.SvnExeScmProvider;
 import org.apache.maven.scm.repository.ScmRepository;
 
 import java.io.File;
@@ -149,9 +147,8 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
             if (!distCheckoutDirectory.exists()) {
                 SharedFunctions.initDirectory(getLog(), distCheckoutDirectory);
             }
-            ScmFileSet scmFileSet = new ScmFileSet(distCheckoutDirectory);
-            getLog().info("Checking out dist from: " + distSvnStagingUrl);
-            provider.checkOut(repository, scmFileSet);
+            ScmFileSet scmFileSet = SharedFunctions.checkoutFiles(getLog(),
+                    distCheckoutDirectory, distSvnStagingUrl, provider, repository);
             File copiedReleaseNotes = copyReleaseNotesToWorkingDirectory();
             List<File> filesToCommit = copyDistributionsIntoScmDirectoryStructure(copiedReleaseNotes);
             if (!dryRun) {

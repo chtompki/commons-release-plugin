@@ -150,10 +150,11 @@ public class CommonsReleasePromotionMojo extends AbstractMojo {
      * @throws MojoExecutionException in the case that we have an {@link java.io.IOException} under the hood
      *                                in the creation of the directories.
      */
-    private void initializeScmDirectories() throws MojoExecutionException{
+    private void initializeScmDirectories() throws MojoExecutionException {
         if (!distStagingCheckoutDirectory.exists()) {
             SharedFunctions.initDirectory(getLog(), distStagingCheckoutDirectory);
-        }if (!distReleaseCheckoutDirectory.exists()) {
+        }
+        if (!distReleaseCheckoutDirectory.exists()) {
             SharedFunctions.initDirectory(getLog(), distReleaseCheckoutDirectory);
         }
     }
