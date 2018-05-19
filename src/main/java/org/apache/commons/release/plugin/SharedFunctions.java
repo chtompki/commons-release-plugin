@@ -21,6 +21,14 @@ import java.io.IOException;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.scm.ScmException;
+import org.apache.maven.scm.ScmFileSet;
+import org.apache.maven.scm.manager.BasicScmManager;
+import org.apache.maven.scm.manager.ScmManager;
+import org.apache.maven.scm.provider.ScmProvider;
+import org.apache.maven.scm.provider.svn.repository.SvnScmProviderRepository;
+import org.apache.maven.scm.provider.svn.svnexe.SvnExeScmProvider;
+import org.apache.maven.scm.repository.ScmRepository;
 import org.codehaus.plexus.util.FileUtils;
 
 /**
@@ -83,5 +91,56 @@ public final class SharedFunctions {
             log.error(e.getMessage());
             throw new MojoExecutionException("Unable to copy file: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Builds up an {@link ScmProvider} for an {@link SvnScmProviderRepository}from a url, a username, and
+     * a password.
+     *
+     * @param scmManager is the project's {@link ScmManager}.
+     * @param repository is the initialized {@link ScmRepository}.
+     * @param username the username for the repository.
+     * @param password the password for the repository.
+     * @return an initialized {@link ScmProvider}.
+     * @throws ScmException if the creation fails.
+     */
+    public static ScmProvider buildScmProvider(ScmManager scmManager, ScmRepository repository,
+                                                    String username, String password) throws ScmException {
+        ScmProvider provider = scmManager.getProviderByRepository(repository);
+        SvnScmProviderRepository providerRepository = (SvnScmProviderRepository) repository.getProviderRepository();
+        providerRepository.setUser(username);
+        providerRepository.setPassword(password);
+        return provider;
+    }
+
+    /**
+     * Builds up the {@link ScmRepository} to be used in committing to and from SVN.
+     *
+     * @param scmManager the maven {@link ScmManager} for the project.
+     * @param scmUrl the url for the repository in the form <code>scm:svn:https://TheRemainderOfTheSvnRepoUrl</code>.
+     * @return the properly configured {@link ScmRepository}.
+     * @throws ScmException
+     */
+    public static ScmRepository buildScmRepository(ScmManager scmManager, String scmUrl) throws ScmException {
+        scmManager.setScmProvider("svn", new SvnExeScmProvider());
+        return scmManager.makeScmRepository(scmUrl);
+    }
+
+    /**
+     * Convenience method for checking out the svn repository and log the fact that we do so.
+     *
+     * @param checkoutDirectory the {@link File} to which we checkout the
+     * @param scmUrl the url from which we are checking out the SVN repo for the sake of logging.
+     * @param scmProvider the {@link ScmProvider} to use for the checkout.
+     * @param repository the {@link ScmRepository} to use for the checkout.
+     * @return the {@link ScmFileSet} that has been checked out.
+     * @throws ScmException if an error in the checkout occurrs.
+     */
+    public static ScmFileSet checkoutFiles(Log log, File checkoutDirectory, String scmUrl,
+                                     ScmProvider scmProvider, ScmRepository repository) throws ScmException{
+        ScmFileSet scmFileSet = new ScmFileSet(checkoutDirectory);
+        log.info("Checking out dist from: " + scmUrl);
+        scmProvider.checkOut(repository, scmFileSet);
+        return scmFileSet;
     }
 }

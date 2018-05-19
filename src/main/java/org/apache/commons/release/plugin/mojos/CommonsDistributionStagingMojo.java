@@ -144,12 +144,8 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
         getLog().info("Preparing to stage distributions");
         try {
             ScmManager scmManager = new BasicScmManager();
-            scmManager.setScmProvider("svn", new SvnExeScmProvider());
-            ScmRepository repository = scmManager.makeScmRepository(distSvnStagingUrl);
-            ScmProvider provider = scmManager.getProviderByRepository(repository);
-            SvnScmProviderRepository providerRepository = (SvnScmProviderRepository) repository.getProviderRepository();
-            providerRepository.setUser(username);
-            providerRepository.setPassword(password);
+            ScmRepository repository = SharedFunctions.buildScmRepository(scmManager, distSvnStagingUrl);
+            ScmProvider provider = SharedFunctions.buildScmProvider(scmManager, repository, username, password);
             if (!distCheckoutDirectory.exists()) {
                 SharedFunctions.initDirectory(getLog(), distCheckoutDirectory);
             }
