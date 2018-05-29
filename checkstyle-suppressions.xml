@@ -27,4 +27,9 @@
     <suppress checks="MagicNumber" files=".*[/\\]test[/\\].*" />
     <suppress checks="MethodName" files=".*[/\\]test[/\\].*" />
     <suppress checks="Javadoc" files=".*[/\\]test[/\\].*" />
+
+
+    <suppress checks="LineLength" files=".*CommonsDistributionDetachmentMojoTest.java" />
+    <suppress checks="LineLength" files=".*CommonsDistributionStagingMojoTest.java" />
+    <suppress checks="FinalClassCheck" files=".*Delegate.java" />
 </suppressions>
