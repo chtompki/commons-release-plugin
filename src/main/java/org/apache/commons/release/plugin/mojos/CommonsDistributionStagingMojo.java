@@ -16,14 +16,7 @@
  */
 package org.apache.commons.release.plugin.mojos;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.release.plugin.SharedFunctions;
 import org.apache.commons.release.plugin.velocity.HeaderHtmlVelocityDelegate;
@@ -45,6 +38,15 @@ import org.apache.maven.scm.manager.ScmManager;
 import org.apache.maven.scm.provider.ScmProvider;
 import org.apache.maven.scm.repository.ScmRepository;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * This class checks out the dev distribution location, copies the distributions into that directory
  * structure under the <code>target/commons-release-plugin/scm</code> directory. Then commits the
@@ -59,6 +61,11 @@ import org.apache.maven.scm.repository.ScmRepository;
         aggregator = true)
 public class CommonsDistributionStagingMojo extends AbstractMojo {
 
+    /** The name of file generated from the README.vm velocity template to be checked into the dist svn repo. */
+    private static final String README_FILE_NAME = "README.html";
+    /** The name of file generated from the HEADER.vm velocity template to be checked into the dist svn repo. */
+    private static final String HEADER_FILE_NAME = "HEADER.html";
+
     /**
      * The {@link MavenProject} object is essentially the context of the maven build at
      * a given time.
@@ -71,7 +78,11 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
      * this directory is where the <code>pom.xml</code> resides.
      */
     @Parameter(defaultValue = "${basedir}")
-    private File basedir;
+    private File baseDir;
+
+    /** The location to which the site gets built during running <code>mvn site</code>. */
+    @Parameter(defaultValue = "${project.build.directory}/site", property = "commons.siteOutputDirectory")
+    private File siteDirectory;
 
     /**
      * The main working directory for the plugin, namely <code>target/commons-release-plugin</code>, but
@@ -89,7 +100,7 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
     private File distCheckoutDirectory;
 
     /**
-     * The location of the RELEASE-NOTES.txt file such that multimodule builds can configure it.
+     * The location of the RELEASE-NOTES.txt file such that multi-module builds can configure it.
      */
     @Parameter(defaultValue = "${basedir}/RELEASE-NOTES.txt", property = "commons.releaseNotesLocation")
     private File releaseNotesFile;
@@ -103,10 +114,9 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
     private Boolean dryRun;
 
     /**
-     * The url of the subversion repository to which we wish the artifacts to be staged. Typicallly
-     * this would need to be of the form:
-     * <code>scm:svn:https://dist.apache.org/repos/dist/dev/commons/foo</code>. Note. that the prefix to the
-     * substring <code>https</code> is a requirement.
+     * The url of the subversion repository to which we wish the artifacts to be staged. Typically this would need to
+     * be of the form: <code>scm:svn:https://dist.apache.org/repos/dist/dev/commons/foo/version-RC#</code>. Note. that
+     * the prefix to the substring <code>https</code> is a requirement.
      */
     @Parameter(defaultValue = "", property = "commons.distSvnStagingUrl")
     private String distSvnStagingUrl;
@@ -118,7 +128,7 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
     private Boolean isDistModule;
 
     /**
-     * The username for the distribution subversion repository. This is typically your apache id.
+     * The username for the distribution subversion repository. This is typically your Apache id.
      */
     @Parameter(property = "user.name")
     private String username;
@@ -182,8 +192,9 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
                     throw new MojoExecutionException("Adding dist files failed: " + addResult.getCommandOutput());
                 }
             } else {
-                getLog().info("Would have committed to: " + distSvnStagingUrl);
-                getLog().info("Staging release: " + project.getArtifactId() + ", version: " + project.getVersion());
+                getLog().info("[Dry run] Would have committed to: " + distSvnStagingUrl);
+                getLog().info(
+                        "[Dry run] Staging release: " + project.getArtifactId() + ", version: " + project.getVersion());
             }
         } catch (ScmException e) {
             getLog().error("Could not commit files to dist: " + distSvnStagingUrl, e);
@@ -198,7 +209,7 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
      * @return the RELEASE-NOTES.txt file that exists in the <code>target/commons-release-notes/scm</code>
      *         directory for the purpose of adding it to the scm change set in the method
      *         {@link CommonsDistributionStagingMojo#copyDistributionsIntoScmDirectoryStructure(File)}.
-     * @throws MojoExecutionException if an {@link IOException} occurrs as a wrapper so that maven
+     * @throws MojoExecutionException if an {@link IOException} occurs as a wrapper so that maven
      *                                can properly handle the exception.
      */
     private File copyReleaseNotesToWorkingDirectory() throws MojoExecutionException {
@@ -235,7 +246,7 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
      *                           <code>target/commons-release-plugin/scm</code> directory.
      * @return a {@link List} of {@link File}'s in the directory for the purpose of adding them to the maven
      *         {@link ScmFileSet}.
-     * @throws MojoExecutionException if an {@link IOException} occurrs so that Maven can handle it properly.
+     * @throws MojoExecutionException if an {@link IOException} occurs so that Maven can handle it properly.
      */
     private List<File> copyDistributionsIntoScmDirectoryStructure(File copiedReleaseNotes)
             throws MojoExecutionException {
@@ -256,8 +267,7 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
                 SharedFunctions.copyFile(getLog(), file, copy);
                 filesForMavenScmFileSet.add(copy);
             } else if (StringUtils.containsAny(file.getName(), "scm", "sha1.properties", "sha256.properties")) {
-                getLog().debug("Not copying scm directory over "
-                    + "to the scm directory because it is the scm directory.");
+                getLog().debug("Not copying scm directory over to the scm directory because it is the scm directory.");
                 //do nothing because we are copying into scm
             } else {
                 copy = new File(distCheckoutDirectory.getAbsolutePath(),  file.getName());
@@ -265,9 +275,32 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
                 filesForMavenScmFileSet.add(copy);
             }
         }
+        filesForMavenScmFileSet.addAll(copySiteToScmDirectory());
         filesForMavenScmFileSet.addAll(buildReadmeAndHeaderHtmlFiles());
         filesForMavenScmFileSet.add(copiedReleaseNotes);
         return filesForMavenScmFileSet;
+    }
+
+    /**
+     * Copies <code>${basedir}/target/site</code> to <code>${basedir}/target/commons-release-plugin/scm/site</code>.
+     *
+     * @return the {@link List} of {@link File}'s contained in
+     *         <code>${basedir}/target/commons-release-plugin/scm/site</code>, after the copy is complete.
+     * @throws MojoExecutionException if the site copying fails for some reason.
+     */
+    private List<File> copySiteToScmDirectory() throws MojoExecutionException {
+        if (!siteDirectory.exists()) {
+            getLog().error("\"mvn site\" was not run before this goal, or a siteDirectory did not exist.");
+            throw new MojoExecutionException(
+                    "\"mvn site\" was not run before this goal, or a siteDirectory did not exist."
+            );
+        }
+        try {
+            FileUtils.copyDirectoryToDirectory(siteDirectory, distCheckoutDirectory);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Site copying failed", e);
+        }
+        return new ArrayList<>(FileUtils.listFiles(siteDirectory, null, true));
     }
 
     /**
@@ -290,33 +323,38 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
      */
     private List<File> buildReadmeAndHeaderHtmlFiles() throws MojoExecutionException {
         List<File> headerAndReadmeFiles = new ArrayList<>();
-        File headerFile = new File(distCheckoutDirectory, "HEADER.html");
-        File readmeFile = new File(distCheckoutDirectory, "README.html");
-        try {
-            FileOutputStream headerStream = new FileOutputStream(headerFile);
-            Writer headerWriter = new OutputStreamWriter(headerStream, "UTF-8");
-            FileOutputStream readmeStream = new FileOutputStream(readmeFile);
-            Writer readmeWriter = new OutputStreamWriter(readmeStream, "UTF-8");
-            HeaderHtmlVelocityDelegate headerHtmlVelocityDelegate = HeaderHtmlVelocityDelegate
-                .builder()
-                .build();
-            headerWriter = headerHtmlVelocityDelegate.render(headerWriter);
-            headerWriter.close();
-            headerAndReadmeFiles.add(headerFile);
-            ReadmeHtmlVelocityDelegate readmeHtmlVelocityDelegate = ReadmeHtmlVelocityDelegate
-                .builder()
-                .withArtifactId(project.getArtifactId())
-                .withVersion(project.getVersion())
-                .withSiteUrl(project.getUrl())
-                .build();
-            readmeWriter = readmeHtmlVelocityDelegate.render(readmeWriter);
-            readmeWriter.close();
-            headerAndReadmeFiles.add(readmeFile);
-            headerAndReadmeFiles.addAll(copyHeaderAndReadmeToSubdirectories(headerFile, readmeFile));
+        File headerFile = new File(distCheckoutDirectory, HEADER_FILE_NAME);
+        //
+        // HEADER file
+        //
+        try (Writer headerWriter = new OutputStreamWriter(new FileOutputStream(headerFile), "UTF-8")) {
+            HeaderHtmlVelocityDelegate.builder().build().render(headerWriter);
         } catch (IOException e) {
-            getLog().error("Could not build HEADER and README html files", e);
-            throw new MojoExecutionException("Could not build HEADER and README html files", e);
+            final String message = "Could not build HEADER html file " + headerFile;
+            getLog().error(message, e);
+            throw new MojoExecutionException(message, e);
         }
+        headerAndReadmeFiles.add(headerFile);
+        //
+        // README file
+        //
+        File readmeFile = new File(distCheckoutDirectory, README_FILE_NAME);
+        try (Writer readmeWriter = new OutputStreamWriter(new FileOutputStream(readmeFile), "UTF-8")) {
+            // @formatter:off
+            ReadmeHtmlVelocityDelegate readmeHtmlVelocityDelegate = ReadmeHtmlVelocityDelegate.builder()
+                    .withArtifactId(project.getArtifactId())
+                    .withVersion(project.getVersion())
+                    .withSiteUrl(project.getUrl())
+                    .build();
+            // @formatter:on
+            readmeHtmlVelocityDelegate.render(readmeWriter);
+        } catch (IOException e) {
+            final String message = "Could not build README html file " + readmeFile;
+            getLog().error(message, e);
+            throw new MojoExecutionException(message, e);
+        }
+        headerAndReadmeFiles.add(readmeFile);
+        headerAndReadmeFiles.addAll(copyHeaderAndReadmeToSubdirectories(headerFile, readmeFile));
         return headerAndReadmeFiles;
     }
 
@@ -335,10 +373,10 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
         List<File> symbolicLinkFiles = new ArrayList<>();
         File sourceRoot = new File(buildDistSourceRoot());
         File binariesRoot = new File(buildDistBinariesRoot());
-        File sourceHeaderFile = new File(sourceRoot, "HEADER.html");
-        File sourceReadmeFile = new File(sourceRoot, "README.html");
-        File binariesHeaderFile = new File(binariesRoot, "HEADER.html");
-        File binariesReadmeFile = new File(binariesRoot, "README.html");
+        File sourceHeaderFile = new File(sourceRoot, HEADER_FILE_NAME);
+        File sourceReadmeFile = new File(sourceRoot, README_FILE_NAME);
+        File binariesHeaderFile = new File(binariesRoot, HEADER_FILE_NAME);
+        File binariesReadmeFile = new File(binariesRoot, README_FILE_NAME);
         SharedFunctions.copyFile(getLog(), headerFile, sourceHeaderFile);
         symbolicLinkFiles.add(sourceHeaderFile);
         SharedFunctions.copyFile(getLog(), readmeFile, sourceReadmeFile);
@@ -353,7 +391,7 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
     /**
      * Build the path for the distribution binaries directory.
      *
-     * @return the local absolute path into the checkedout subversion repository that is where
+     * @return the local absolute path into the checked out subversion repository that is where
      *         the binaries distributions are to be copied.
      */
     private String buildDistBinariesRoot() {
@@ -365,7 +403,7 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
     /**
      * Build the path for the distribution source directory.
      *
-     * @return the local absolute path into the checkedout subversion repository that is where
+     * @return the local absolute path into the checked out subversion repository that is where
      *         the source distributions are to be copied.
      */
     private String buildDistSourceRoot() {
@@ -375,13 +413,13 @@ public class CommonsDistributionStagingMojo extends AbstractMojo {
     }
 
     /**
-     * This method is the setter for the {@link CommonsDistributionStagingMojo#basedir} field, specifically
+     * This method is the setter for the {@link CommonsDistributionStagingMojo#baseDir} field, specifically
      * for the usage in the unit tests.
      *
-     * @param basedir is the {@link File} to be used as the project's root directory when this mojo
+     * @param baseDir is the {@link File} to be used as the project's root directory when this mojo
      *                is invoked.
      */
-    protected void setBasedir(File basedir) {
-        this.basedir = basedir;
+    protected void setBaseDir(File baseDir) {
+        this.baseDir = baseDir;
     }
 }

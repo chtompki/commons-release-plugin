@@ -134,9 +134,9 @@ public class DistributionDetachmentProjectStub extends MavenProjectStub {
 
     public class DistributionDetachmentArtifactStub extends ArtifactStub {
 
-        private File artifact;
+        private final File artifact;
 
-        private String type;
+        private final String type;
 
         public DistributionDetachmentArtifactStub(File file, String type, String artifactId) {
             this.setArtifactId(artifactId);
@@ -144,10 +144,12 @@ public class DistributionDetachmentProjectStub extends MavenProjectStub {
             this.type = type;
         }
 
+        @Override
         public File getFile() {
             return this.artifact;
         }
 
+        @Override
         public String getType() {
             return this.type;
         }

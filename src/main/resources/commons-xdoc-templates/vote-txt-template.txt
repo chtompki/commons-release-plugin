@@ -33,7 +33,7 @@ The Git tag @TAGNAME@ commit for this RC is @TAGCOMMIT@ which you can browse her
     https://git-wip-us.apache.org/repos/asf?p=commons-@ID@.git;a=tag;h=refs/tags/@TAGNAME@
 
 Maven artifacts are here:
-    https://repository.apache.org/content/repositories/orgapachecommons-***NNNN***/org/apache/commons/@ARTIFACTID@/@VERSION@/
+    https://repository.apache.org/content/repositories/orgapachecommons-@NEXUS_REPO_ID@/org/apache/commons/@ARTIFACTID@/@VERSION@/
 
 These are the Maven artifacts and their hashes in Nexus:
 
@@ -48,7 +48,7 @@ Use the output from "mvn -version" for each combination you tested.
 ***
 
 Details of changes since @BC@ are in the release notes:
-    https://dist.apache.org/repos/dist/dev/commons/@ID@/@VERSION@-@RC@/RELEASE-NOTES.txt
+    @DISTURL@/RELEASE-NOTES.txt
     @SITEURL@/changes-report.html
 
 Site:

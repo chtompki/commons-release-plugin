@@ -74,6 +74,8 @@
   </developers>
 
   <properties>
+    <!-- clirr.failOnError=False-->
+    <failOnError>false</failOnError>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
     <maven.dependency.version>3.5.3</maven.dependency.version>
@@ -90,7 +92,7 @@
     <commons.scmPubCheckoutDirectory>site-content</commons.scmPubCheckoutDirectory>
     <checkstyle.plugin.version>3.0.0</checkstyle.plugin.version>
     <checkstyle.version>6.19</checkstyle.version>
-    <maven-scm.version>1.9.5</maven-scm.version>
+    <maven-scm.version>1.10.0</maven-scm.version>
     <commons.jacoco.version>0.8.0</commons.jacoco.version>
     <commons.jacoco.classRatio>0.1</commons.jacoco.classRatio>
     <commons.jacoco.instructionRatio>0.1</commons.jacoco.instructionRatio>
@@ -99,7 +101,7 @@
     <commons.jacoco.lineRatio>0.1</commons.jacoco.lineRatio>
     <commons.jacoco.complexityRatio>0.1</commons.jacoco.complexityRatio>
     <commons.jacoco.haltOnFailure>true</commons.jacoco.haltOnFailure>
-    <commons.encoding>iso-8859-1</commons.encoding>
+    <commons.encoding>ISO-8859-1</commons.encoding>
     <!-- Provide the Javadoc HTML file encoding -->
     <commons.docEncoding>${commons.encoding}</commons.docEncoding>
     <!-- Define source encoding for filtering; used by general plugins -->
