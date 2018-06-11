@@ -137,6 +137,8 @@ public class CommonsReleasePromotionMojo extends AbstractMojo {
                     distStagingCheckoutDirectory, distSvnStagingUrl, stagingProvider, stagingRepository);
             ScmFileSet releaseScmFileSet = SharedFunctions.checkoutFiles(getLog(),
                     distReleaseCheckoutDirectory, distSvnReleaseUrl, releasesProvider, releasesRepository);
+            releasesProvider.remove(releasesRepository, releaseScmFileSet, "removing existing release");
+
         } catch (ScmException e) {
             getLog().error("Could not promte files from: " + distSvnStagingUrl, e);
             throw new MojoExecutionException("Could not promte files from: " + distSvnStagingUrl, e);
