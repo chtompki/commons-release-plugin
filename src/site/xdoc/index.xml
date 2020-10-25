@@ -66,7 +66,7 @@
                     the root of the project, and commit them to a specified staging subversion repository.
                 </li>
                 <li>
-                  <a href="vote-txt.html">org.apache.commons:commons-release-plugin:1.7:vote-txt</a>
+                  <a href="vote-txt.html">commons-release:vote-txt</a> -Dcommons.nexus.repo.id=nnnn [-Dgit.tag.name] # where nnn is the number following orgapachecommons- in the Nexus 'Repository' column
                 </li>
             </ul>
             </p>
@@ -75,15 +75,13 @@
         <section name="Using the plugin">
             <p>
             Configure the plugin as the last plugin in the<code>&lt;build&gt;</code> section of the <code>pom.xml</code>
+            </p>
+            <p>N.B. This is now done in the Commons Parent POM, so is not needed in the component POM.</p>
 <source><![CDATA[
 <plugin>
   <groupId>org.apache.commons</groupId>
   <artifactId>commons-release-plugin</artifactId>
   <version>1.7</version>
-  <configuration>
-    <distSvnStagingUrl>scm:svn:https://dist.apache.org/repos/dist/dev/commons/foo</distSvnStagingUrl>
-    <isDistModule>true</isDistModule>
-  </configuration>
   <executions>
     <execution>
       <id>clean-staging</id>
@@ -109,7 +107,42 @@
   </executions>
 </plugin>
 ]]></source>
+            <p>
+            The following properties need to be defined in the component POM if not already defined
             </p>
+<source><![CDATA[
+    <properties>
+          <!-- Previous version of the component (used for reporting binary compatibility check)-->
+          <commons.bc.version>m.n</commons.bc.version>
+          <commons.release.isDistModule>true</commons.release.isDistModule>
+    </properties>
+]]></source>
+            <p>
+            Ensure your Release Manager details are defined in your Maven <code>~/.m2/settings.xml</code> file
+            (These are used by the vote-txt goal)
+            Properties have to be defined in a profile. For example:
+            </p>
+<source><![CDATA[
+<settings>
+  ...
+  <profiles>
+    ...
+    <profile>
+      <id>active-profile</id>
+      <properties>
+        <commons.releaseManagerName>Your Name</commons.releaseManagerName>
+        <commons.releaseManagerKey>Your Signing Key Hex ID</commons.releaseManagerKey>
+      </properties>
+    </profile>
+  </profiles>
+
+  <activeProfiles>
+    <!-- define active profile name -->
+    <activeProfile>active-profile</activeProfile>
+  </activeProfiles>
+  ...
+</settings>
+]]></source>
             <p>
             After the above configuration performing the release would occur by (<i>note.</i> more
             in depth details can be found at
